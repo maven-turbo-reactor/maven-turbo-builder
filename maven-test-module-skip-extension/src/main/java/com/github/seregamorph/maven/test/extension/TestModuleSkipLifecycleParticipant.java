@@ -1,6 +1,7 @@
 package com.github.seregamorph.maven.test.extension;
 
 import org.apache.maven.AbstractMavenLifecycleParticipant;
+import org.apache.maven.MavenExecutionException;
 import org.apache.maven.SessionScoped;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
@@ -24,9 +25,14 @@ public class TestModuleSkipLifecycleParticipant extends AbstractMavenLifecyclePa
     private static final Logger logger = LoggerFactory.getLogger(TestModuleSkipLifecycleParticipant.class);
 
     @Override
-    public void afterProjectsRead(MavenSession session) {
+    public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
         String testModuleSkip = session.getUserProperties().getProperty("testModuleSkip");
         if ("true".equals(testModuleSkip)) {
+            if (!"true".equals(session.getUserProperties().getProperty("maven.test.skip"))) {
+                String message = "testModuleSkip property may be true only in combination with maven.test.skip=true";
+                throw new MavenExecutionException(message, new IllegalStateException(message));
+            }
+
             logger.info("test-module-skip-extension: cleaning up projects (total projects {})", session.getProjects().size());
             Set<String> removedModules = new TreeSet<>();
             session.getProjects().removeIf(mavenProject -> {
