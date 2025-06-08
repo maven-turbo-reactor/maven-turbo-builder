@@ -40,9 +40,9 @@ class SignalingExecutorCompletionService {
         signaler.accept(project);
     }
 
-    Future<MavenProject> submit(Callable<MavenProject> buildCallable) {
+    Future<MavenProject> submit(int order, Callable<MavenProject> buildCallable) {
         Objects.requireNonNull(buildCallable);
-        return executor.submit(() -> {
+        return executor.submit(new OrderedCallable<>(order, () -> {
             AtomicBoolean signaled = new AtomicBoolean(false);
             currentSignaler.set(mavenProject -> {
                 // No race condition here with "if (!signaled.get())" block, because it's the same thread.
@@ -66,7 +66,7 @@ class SignalingExecutorCompletionService {
             } finally {
                 currentSignaler.remove();
             }
-        });
+        }));
     }
 
     MavenProject takeSignaled() throws InterruptedException, ExecutionException {

@@ -8,8 +8,10 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -85,7 +87,14 @@ public class TurboBuilder implements Builder {
         for (ProjectSegment segment : projectBuilds) {
             segment.getSession().setParallel(parallel);
         }
-        ExecutorService executor = Executors.newFixedThreadPool(nThreads, new BuildThreadFactory());
+        // executor supporting task ordering, prioritize building modules that have more downstream dependencies
+        ExecutorService executor = new ThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS,
+            new PriorityBlockingQueue<>(), new BuildThreadFactory()) {
+            @Override
+            protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
+                return new OrderedFutureTask<>((OrderedCallable<T>) callable);
+            }
+        };
         SignalingExecutorCompletionService service = new SignalingExecutorCompletionService(executor);
 
         for (TaskSegment taskSegment : taskSegments) {
@@ -128,7 +137,10 @@ public class TurboBuilder implements Builder {
             logger.debug("Scheduling: " + projectSegment.getProject());
             Callable<MavenProject> cb = createBuildCallable(
                 rootSession, projectSegment, reactorContext, taskSegment, duplicateArtifactIds);
-            tasks.add(service.submit(cb));
+            List<MavenProject> downstreamDependencies = rootSession.getProjectDependencyGraph()
+                .getDownstreamProjects(mavenProject, false);
+            // negate size for descending order
+            tasks.add(service.submit(-downstreamDependencies.size(), cb));
         }
 
         // for each finished project
@@ -151,7 +163,9 @@ public class TurboBuilder implements Builder {
                             reactorContext,
                             taskSegment,
                             duplicateArtifactIds);
-                        tasks.add(service.submit(cb));
+                        List<MavenProject> downstreamDependencies = rootSession.getProjectDependencyGraph()
+                            .getDownstreamProjects(mavenProject, false);
+                        tasks.add(service.submit(-downstreamDependencies.size(), cb));
                     }
                 }
             } catch (InterruptedException | ExecutionException e) {
