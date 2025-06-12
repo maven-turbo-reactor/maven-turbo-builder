@@ -1,3 +1,4 @@
 com.github.seregamorph.maven.turbo.DelegatingMojosExecutionStrategy
 com.github.seregamorph.maven.turbo.TurboBuilder
+com.github.seregamorph.maven.turbo.TurboBuilderConfig
 com.github.seregamorph.maven.turbo.TurboMavenLifecycleParticipant

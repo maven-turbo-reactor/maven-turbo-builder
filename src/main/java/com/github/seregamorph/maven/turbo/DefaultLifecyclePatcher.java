@@ -9,6 +9,7 @@ import java.util.List;
  */
 class DefaultLifecyclePatcher {
 /*
+    If test-jar is not supported:
     original phases of the default lifecycle [
         "validate",
         "initialize",
@@ -20,13 +21,45 @@ class DefaultLifecyclePatcher {
         "process-classes",
 
      |==>
-     |   "generate-test-sources",
-     |   "process-test-sources",
-     |   "generate-test-resources",
-     |   "process-test-resources",
-     |   "test-compile",
-     |   "process-test-classes",
-     |   "test",
+     |  "generate-test-sources",
+     |  "process-test-sources",
+     |  "generate-test-resources",
+     |  "process-test-resources",
+     |  "test-compile",
+     |  "process-test-classes",
+     |  "test",
+     |
+     |  // moved before "*test*" phases
+     |= "prepare-package",
+     |= "package",
+
+        "pre-integration-test",
+        "integration-test",
+        "post-integration-test",
+        "verify",
+        "install",
+        "deploy"
+    ]
+
+    If test-jar is supported
+    original phases of the default lifecycle [
+        "validate",
+        "initialize",
+        "generate-sources",
+        "process-sources",
+        "generate-resources",
+        "process-resources",
+        "compile",
+        "process-classes",
+
+        "generate-test-sources",
+        "process-test-sources",
+        "generate-test-resources",
+        "process-test-resources",
+        "test-compile",
+        "process-test-classes",
+     |==>
+     |  "test",
      |
      |  // moved before "*test*" phases
      |= "prepare-package",
@@ -41,12 +74,13 @@ class DefaultLifecyclePatcher {
     ]
 */
 
-    static void patchDefaultLifecycle(List<String> phases) {
+    static void patchDefaultLifecycle(TurboBuilderConfig config, List<String> phases) {
         List<String> packagePhases = new ArrayList<>();
         int firstTestPhaseIndex = -1;
         for (int i = 0; i < phases.size(); i++) {
             String lifecyclePhase = phases.get(i);
-            if (firstTestPhaseIndex < 0 && isTest(lifecyclePhase)) {
+            if (firstTestPhaseIndex < 0
+                    && (config.isSupportTestJar() ? isTest(lifecyclePhase) : isAnyTest(lifecyclePhase))) {
                 firstTestPhaseIndex = i;
             }
             if (isPackage(lifecyclePhase)) {
@@ -60,17 +94,22 @@ class DefaultLifecyclePatcher {
 
     static boolean isPackage(String phase) {
         return Arrays.asList("prepare-package", "package")
-            .contains(phase);
+                .contains(phase);
     }
 
-    static boolean isTest(String phase) {
+    private static boolean isTest(String phase) {
+        // "test"
+        return "test".equals(phase);
+    }
+
+    static boolean isAnyTest(String phase) {
         // "generate-test-sources", "process-test-sources", "generate-test-resources", "process-test-resources",
         // "test-compile", "process-test-classes", "test", "pre-integration-test", "integration-test",
         // "post-integration-test"
         return "test".equals(phase)
-            || phase.contains("-test-")
-            || phase.startsWith("test-")
-            || phase.endsWith("-test");
+                || phase.contains("-test-")
+                || phase.startsWith("test-")
+                || phase.endsWith("-test");
     }
 
     private DefaultLifecyclePatcher() {

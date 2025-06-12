@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 class TurboMojosExecutionStrategyTest {
 
     @Test
-    public void shouldReorderAndSignalFullPhases() throws LifecycleExecutionException {
+    public void shouldReorderAndSignalFullPhasesNoTestJarSupported() throws LifecycleExecutionException {
         List<String> phases = List.of(
             "validate",
             "initialize",
@@ -72,12 +72,68 @@ class TurboMojosExecutionStrategyTest {
             "exec:install",
             "exec:deploy"
         );
-
         shouldReorderAndSignalImpl(phases, expectedEvents);
     }
 
     @Test
-    public void shouldReorderAndSignalSubsetPhases() throws LifecycleExecutionException {
+    public void shouldReorderAndSignalFullPhasesTestJarSupported() throws LifecycleExecutionException {
+        List<String> phases = List.of(
+            "validate",
+            "initialize",
+            "generate-sources",
+            "process-sources",
+            "generate-resources",
+            "process-resources",
+            "compile",
+            "process-classes",
+            "generate-test-sources",
+            "process-test-sources",
+            "generate-test-resources",
+            "process-test-resources",
+            "test-compile",
+            "process-test-classes",
+            // note: already reordered before test phases
+            "prepare-package",
+            "package",
+            "test",
+            "pre-integration-test",
+            "integration-test",
+            "post-integration-test",
+            "verify",
+            "install",
+            "deploy"
+        );
+        var expectedEvents = List.of(
+            "exec:validate",
+            "exec:initialize",
+            "exec:generate-sources",
+            "exec:process-sources",
+            "exec:generate-resources",
+            "exec:process-resources",
+            "exec:compile",
+            "exec:process-classes",
+            "exec:generate-test-sources",
+            "exec:process-test-sources",
+            "exec:generate-test-resources",
+            "exec:process-test-resources",
+            "exec:test-compile",
+            "exec:process-test-classes",
+            "exec:prepare-package",
+            "exec:package",
+            "signal",
+            "exec:test",
+            "exec:pre-integration-test",
+            "exec:integration-test",
+            "exec:post-integration-test",
+            "exec:verify",
+            "exec:install",
+            "exec:deploy"
+        );
+        shouldReorderAndSignalImpl(phases, expectedEvents);
+    }
+
+    @Test
+    public void shouldReorderAndSignalSubsetPhasesNoTestJarSupported() throws LifecycleExecutionException {
         List<String> phases = List.of(
             "validate",
             "initialize",

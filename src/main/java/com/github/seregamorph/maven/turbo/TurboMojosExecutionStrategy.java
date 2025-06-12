@@ -1,7 +1,7 @@
 package com.github.seregamorph.maven.turbo;
 
+import static com.github.seregamorph.maven.turbo.DefaultLifecyclePatcher.isAnyTest;
 import static com.github.seregamorph.maven.turbo.DefaultLifecyclePatcher.isPackage;
-import static com.github.seregamorph.maven.turbo.DefaultLifecyclePatcher.isTest;
 import static com.github.seregamorph.maven.turbo.MavenPropertyUtils.getProperty;
 import static com.github.seregamorph.maven.turbo.MavenPropertyUtils.isEmptyOrTrue;
 
@@ -49,7 +49,7 @@ public class TurboMojosExecutionStrategy implements MojosExecutionStrategy {
                         phase = mojoDescriptor.getPhase();
                     }
                 }
-                if (phase != null && isTest(phase)) {
+                if (phase != null && isAnyTest(phase)) {
                     signaled = true;
                     // signal before tests
                     SignalingExecutorCompletionService.signal(currentProject);
