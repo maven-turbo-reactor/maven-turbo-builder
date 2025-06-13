@@ -1,34 +1,33 @@
 package com.github.seregamorph.maven.turbo;
 
-import org.apache.maven.execution.MavenSession;
-
 import javax.inject.Inject;
+import org.apache.maven.execution.MavenSession;
 
 /**
  * @author Sergey Chernov
  */
 public class TurboBuilderConfig {
 
-    private final boolean supportTestJar;
+    private final boolean turboTestCompile;
 
     @Inject
     public TurboBuilderConfig(MavenSession session) {
-        String supportTestJar = session.getSystemProperties().getProperty("supportTestJar");
-        this.supportTestJar = MavenPropertyUtils.isEmptyOrTrue(supportTestJar);
+        String turboTestCompile = session.getSystemProperties().getProperty("turboTestCompile");
+        this.turboTestCompile = MavenPropertyUtils.isEmptyOrTrue(turboTestCompile);
     }
 
-    TurboBuilderConfig(boolean supportTestJar) {
-        this.supportTestJar = supportTestJar;
+    TurboBuilderConfig(boolean turboTestCompile) {
+        this.turboTestCompile = turboTestCompile;
     }
 
-    public boolean isSupportTestJar() {
-        return supportTestJar;
+    public boolean isTurboTestCompile() {
+        return turboTestCompile;
     }
 
     @Override
     public String toString() {
         return "TurboBuilderConfig{" +
-            "supportTestJar=" + supportTestJar +
+            "turboTestCompile=" + turboTestCompile +
             '}';
     }
 }

@@ -80,7 +80,7 @@ class DefaultLifecyclePatcher {
         for (int i = 0; i < phases.size(); i++) {
             String lifecyclePhase = phases.get(i);
             if (firstTestPhaseIndex < 0
-                    && (config.isSupportTestJar() ? isTest(lifecyclePhase) : isAnyTest(lifecyclePhase))) {
+                && (config.isTurboTestCompile() ? isTest(lifecyclePhase) : isAnyTest(lifecyclePhase))) {
                 firstTestPhaseIndex = i;
             }
             if (isPackage(lifecyclePhase)) {
@@ -94,7 +94,7 @@ class DefaultLifecyclePatcher {
 
     static boolean isPackage(String phase) {
         return Arrays.asList("prepare-package", "package")
-                .contains(phase);
+            .contains(phase);
     }
 
     private static boolean isTest(String phase) {
@@ -107,9 +107,9 @@ class DefaultLifecyclePatcher {
         // "test-compile", "process-test-classes", "test", "pre-integration-test", "integration-test",
         // "post-integration-test"
         return "test".equals(phase)
-                || phase.contains("-test-")
-                || phase.startsWith("test-")
-                || phase.endsWith("-test");
+            || phase.contains("-test-")
+            || phase.startsWith("test-")
+            || phase.endsWith("-test");
     }
 
     private DefaultLifecyclePatcher() {

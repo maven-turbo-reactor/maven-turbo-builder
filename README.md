@@ -74,6 +74,7 @@ mvn clean verify -b turbo
 To enable this extension by default, add line to `.mvn/maven.config` under root of your project:
 ```
 -bturbo
+-T1C
 ```
 
 Example adoption:

@@ -1,18 +1,34 @@
 package com.github.seregamorph.maven.turbo;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.DefaultLifecycles;
-import org.apache.maven.lifecycle.internal.*;
+import org.apache.maven.lifecycle.internal.BuildThreadFactory;
+import org.apache.maven.lifecycle.internal.LifecycleModuleBuilder;
+import org.apache.maven.lifecycle.internal.ProjectBuildList;
+import org.apache.maven.lifecycle.internal.ProjectSegment;
+import org.apache.maven.lifecycle.internal.ReactorBuildStatus;
+import org.apache.maven.lifecycle.internal.ReactorContext;
+import org.apache.maven.lifecycle.internal.TaskSegment;
 import org.apache.maven.lifecycle.internal.builder.Builder;
 import org.apache.maven.lifecycle.internal.builder.multithreaded.ConcurrencyDependencyGraph;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.logging.Logger;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
-import java.util.*;
-import java.util.concurrent.*;
 
 /**
  * Custom maven project builder. It's rewritten from original
