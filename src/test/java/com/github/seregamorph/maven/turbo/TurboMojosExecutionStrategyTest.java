@@ -6,7 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.maven.execution.DefaultMavenExecutionRequest;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.execution.MojoExecutionEvent;
+import org.apache.maven.execution.ProjectExecutionEvent;
 import org.apache.maven.lifecycle.LifecycleExecutionException;
+import org.apache.maven.plugin.DefaultMojosExecutionStrategy;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionRunner;
 import org.apache.maven.project.MavenProject;
@@ -15,6 +18,7 @@ import org.junit.jupiter.api.Test;
 /**
  * @author Sergey Chernov
  */
+@SuppressWarnings("CodeBlock2Expr")
 class TurboMojosExecutionStrategyTest {
 
     @Test
@@ -175,7 +179,7 @@ class TurboMojosExecutionStrategyTest {
     }
 
     private static void shouldReorderAndSignalImpl(List<String> phases, List<String> expectedEvents) throws LifecycleExecutionException {
-        var mojos = phases.stream()
+        var executionPlan = phases.stream()
             .map(phase -> {
                 var execution = new MojoExecution(null);
                 execution.setLifecyclePhase(phase);
@@ -188,23 +192,33 @@ class TurboMojosExecutionStrategyTest {
         var project = new MavenProject();
         session.setCurrentProject(project);
 
-        var strategy = new TurboMojosExecutionStrategy();
+        var strategy = new DefaultMojosExecutionStrategy();
         var eventsList = new ArrayList<String>();
+        var turboProjectExecutionListener = new TurboProjectExecutionListener();
+        var turboMojoExecutionListener = new TurboMojoExecutionListener();
         var mojoRunner = new MojoExecutionRunner() {
             @Override
             public void run(MojoExecution execution) {
+                turboMojoExecutionListener.beforeMojoExecution(new MojoExecutionEvent(session, project, execution, null));
                 eventsList.add("exec:" + execution.getLifecyclePhase());
+                turboMojoExecutionListener.afterMojoExecutionSuccess(new MojoExecutionEvent(session, project, execution, null));
             }
         };
 
-        SignalingExecutorCompletionService.currentSignaler.set(p -> {
-            eventsList.add("signal");
+        CurrentProjectExecution.doWithCurrentProject(session, project, () -> {
+            turboProjectExecutionListener.beforeProjectLifecycleExecution(
+                new ProjectExecutionEvent(session, project, executionPlan));
+            SignalingExecutorCompletionService.currentSignaler.set(p -> {
+                eventsList.add("signal");
+            });
+            try {
+                strategy.execute(executionPlan, session, mojoRunner);
+            } catch (LifecycleExecutionException e) {
+                throw new RuntimeException(e);
+            } finally {
+                SignalingExecutorCompletionService.currentSignaler.remove();
+            }
         });
-        try {
-            strategy.execute(mojos, session, mojoRunner);
-        } finally {
-            SignalingExecutorCompletionService.currentSignaler.remove();
-        }
 
         assertEquals(expectedEvents, eventsList);
     }

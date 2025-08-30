@@ -34,11 +34,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Custom maven project builder. It's rewritten from original
  * {@link org.apache.maven.lifecycle.internal.builder.multithreaded.MultiThreadedBuilder}
- *
- * Use "-b turbo" maven parameters like "mvn clean verify -b turbo" to activate.
- * Or specify "-bturbo" in the .mvn/maven.config file to use by default.
- * Schedules downstream dependencies right after the package phase, also it's coupled with
- * {@link TurboMojosExecutionStrategy} reordering package and test phases.
+ * <p>
+ * Use "-b turbo" maven parameters like "mvn clean verify -b turbo" to activate. Or specify "-bturbo" in the
+ * .mvn/maven.config file to use by default. Schedules downstream dependencies right after the package phase, also it's
+ * coupled with {@link TurboProjectExecutionListener} reordering package and test phases.
  *
  * @author Sergey Chernov
  */
@@ -54,9 +53,9 @@ public class TurboBuilder implements Builder {
 
     @Inject
     public TurboBuilder(
-            DefaultLifecycles defaultLifeCycles,
-            LifecycleModuleBuilder lifecycleModuleBuilder,
-            TurboBuilderConfig config
+        DefaultLifecycles defaultLifeCycles,
+        LifecycleModuleBuilder lifecycleModuleBuilder,
+        TurboBuilderConfig config
     ) {
         this.lifecycleModuleBuilder = lifecycleModuleBuilder;
 
@@ -202,8 +201,9 @@ public class TurboBuilder implements Builder {
             currentThread.setName("mvn-turbo-builder-" + threadNameSuffix);
 
             try {
-                lifecycleModuleBuilder.buildProject(
-                    projectBuild.getSession(), rootSession, reactorContext, project, taskSegment);
+                CurrentProjectExecution.doWithCurrentProject(projectBuild.getSession(), project, () ->
+                    lifecycleModuleBuilder.buildProject(projectBuild.getSession(), rootSession, reactorContext,
+                            project, taskSegment));
 
                 return projectBuild.getProject();
             } finally {
