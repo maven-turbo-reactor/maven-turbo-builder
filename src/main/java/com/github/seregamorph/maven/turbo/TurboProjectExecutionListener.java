@@ -1,10 +1,13 @@
 package com.github.seregamorph.maven.turbo;
 
-import static com.github.seregamorph.maven.turbo.DefaultLifecyclePatcher.isPackage;
+import static com.github.seregamorph.maven.turbo.PhaseOrderPatcher.isPackage;
 
+import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import org.apache.maven.Maven;
 import org.apache.maven.execution.ProjectExecutionEvent;
 import org.apache.maven.execution.ProjectExecutionListener;
 
@@ -14,6 +17,13 @@ import org.apache.maven.execution.ProjectExecutionListener;
 @Named
 @Singleton
 public class TurboProjectExecutionListener implements ProjectExecutionListener {
+
+    private final TurboBuilderConfig config;
+
+    @Inject
+    public TurboProjectExecutionListener(TurboBuilderConfig config) {
+        this.config = config;
+    }
 
     @Override
     public void beforeProjectExecution(ProjectExecutionEvent event) {
@@ -28,7 +38,18 @@ public class TurboProjectExecutionListener implements ProjectExecutionListener {
                     return lifecyclePhase != null && isPackage(lifecyclePhase);
                 })
                 .collect(Collectors.toList());
+
+            if (isReorderPhases()) {
+                PhaseOrderPatcher.reorderPhases(config, event.getExecutionPlan(), mojoExecution ->
+                    Objects.toString(mojoExecution.getLifecyclePhase(), ""));
+            }
         });
+    }
+
+    boolean isReorderPhases() {
+        String mavenVersion = Maven.class.getPackage().getImplementationVersion();
+        // since Maven 4 instead of patching DefaultLifecycles we patch the execution plan
+        return mavenVersion != null && mavenVersion.startsWith("4.");
     }
 
     @Override

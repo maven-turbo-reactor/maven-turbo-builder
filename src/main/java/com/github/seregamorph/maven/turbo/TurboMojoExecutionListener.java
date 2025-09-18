@@ -1,6 +1,6 @@
 package com.github.seregamorph.maven.turbo;
 
-import static com.github.seregamorph.maven.turbo.DefaultLifecyclePatcher.isAnyTest;
+import static com.github.seregamorph.maven.turbo.PhaseOrderPatcher.isAnyTest;
 
 import javax.inject.Named;
 import javax.inject.Singleton;

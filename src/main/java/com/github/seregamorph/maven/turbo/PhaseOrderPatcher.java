@@ -3,11 +3,12 @@ package com.github.seregamorph.maven.turbo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * @author Sergey Chernov
  */
-class DefaultLifecyclePatcher {
+class PhaseOrderPatcher {
 /*
     If test-jar is not supported:
     original phases of the default lifecycle [
@@ -74,22 +75,29 @@ class DefaultLifecyclePatcher {
     ]
 */
 
-    static void patchDefaultLifecycle(TurboBuilderConfig config, List<String> phases) {
-        List<String> packagePhases = new ArrayList<>();
-        int firstTestPhaseIndex = -1;
-        for (int i = 0; i < phases.size(); i++) {
-            String lifecyclePhase = phases.get(i);
-            if (firstTestPhaseIndex < 0
+    /**
+     * Reorders Maven DefaultLifecycles (List of String phases) - for Maven 3,
+     * or List of MojoExecution - for Maven 4
+     */
+    static <T> void reorderPhases(TurboBuilderConfig config, List<T> phaseItems, Function<T, String> phaseExtractor) {
+        List<T> packageItems = new ArrayList<>();
+        int firstTestItemIndex = -1;
+        for (int i = 0; i < phaseItems.size(); i++) {
+            T lifecycleItem = phaseItems.get(i);
+            String lifecyclePhase = phaseExtractor.apply(lifecycleItem);
+            if (firstTestItemIndex < 0
                 && (config.isTurboTestCompile() ? isTest(lifecyclePhase) : isAnyTest(lifecyclePhase))) {
-                firstTestPhaseIndex = i;
+                firstTestItemIndex = i;
             }
             if (isPackage(lifecyclePhase)) {
-                packagePhases.add(lifecyclePhase);
+                packageItems.add(lifecycleItem);
             }
         }
-        assert firstTestPhaseIndex != -1;
-        phases.removeAll(packagePhases);
-        phases.addAll(firstTestPhaseIndex, packagePhases);
+        // the list of MojoExecution may miss package items
+        if (firstTestItemIndex > -1) {
+            phaseItems.removeAll(packageItems);
+            phaseItems.addAll(firstTestItemIndex, packageItems);
+        }
     }
 
     static boolean isPackage(String phase) {
@@ -103,15 +111,19 @@ class DefaultLifecyclePatcher {
     }
 
     static boolean isAnyTest(String phase) {
+        // Before Maven 4
         // "generate-test-sources", "process-test-sources", "generate-test-resources", "process-test-resources",
         // "test-compile", "process-test-classes", "test", "pre-integration-test", "integration-test",
         // "post-integration-test"
+        // Since Maven 4 also:
+        // "after:resources", "after:test-resources"
         return "test".equals(phase)
+            || phase.contains(":test") // since maven 4
             || phase.contains("-test-")
             || phase.startsWith("test-")
             || phase.endsWith("-test");
     }
 
-    private DefaultLifecyclePatcher() {
+    private PhaseOrderPatcher() {
     }
 }

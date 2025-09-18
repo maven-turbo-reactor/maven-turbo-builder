@@ -13,9 +13,11 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import org.apache.maven.Maven;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.DefaultLifecycles;
 import org.apache.maven.lifecycle.internal.BuildThreadFactory;
@@ -59,13 +61,19 @@ public class TurboBuilder implements Builder {
     ) {
         this.lifecycleModuleBuilder = lifecycleModuleBuilder;
 
-        // we patch the default lifecycle in-place only when "-b turbo" parameter is specified
-        defaultLifeCycles.getLifeCycles().forEach(lifecycle -> {
-            if ("default".equals(lifecycle.getId())) {
-                logger.warn("Turbo builder: patching default lifecycle 🏎️ (reorder package and test phases)");
-                DefaultLifecyclePatcher.patchDefaultLifecycle(config, lifecycle.getPhases());
-            }
-        });
+        String mavenVersion = Maven.class.getPackage().getImplementationVersion();
+        // since Maven 4 changes of DefaultLifecycles have no effect
+        if (mavenVersion != null && mavenVersion.startsWith("3.")) {
+            // we patch the default lifecycle in-place only when "-b turbo" parameter is specified
+            defaultLifeCycles.getLifeCycles().forEach(lifecycle -> {
+                if ("default".equals(lifecycle.getId())) {
+                    logger.warn("Turbo builder: patching default lifecycle 🏎️ (reorder package and test phases)");
+                    PhaseOrderPatcher.reorderPhases(config, lifecycle.getPhases(), Function.identity());
+                }
+            });
+        } else {
+            logger.warn("Turbo builder: package and test phases are reordered 🏎");
+        }
     }
 
     @Override

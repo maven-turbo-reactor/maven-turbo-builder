@@ -1,19 +1,19 @@
 package com.github.seregamorph.maven.turbo;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.function.Function;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Sergey Chernov
  */
-class DefaultLifecyclePatcherTest {
+class PhaseOrderPatcherTest {
 
     @Test
-    public void shouldPatchDefaultLifecycleNoTestJarSupported() {
+    public void shouldReorderPhasesNoTestJarSupported() {
         var phases = new ArrayList<>(List.of(
             "validate",
             "initialize",
@@ -39,7 +39,7 @@ class DefaultLifecyclePatcherTest {
             "install",
             "deploy"
         ));
-        DefaultLifecyclePatcher.patchDefaultLifecycle(new TurboBuilderConfig(false), phases);
+        PhaseOrderPatcher.reorderPhases(new TurboBuilderConfig(false), phases, Function.identity());
         assertEquals(List.of(
             "validate",
             "initialize",
@@ -68,7 +68,7 @@ class DefaultLifecyclePatcherTest {
     }
 
     @Test
-    public void shouldPatchDefaultLifecycleTestJarSupported() {
+    public void shouldReorderPhasesTestJarSupported() {
         var phases = new ArrayList<>(List.of(
             "validate",
             "initialize",
@@ -94,7 +94,7 @@ class DefaultLifecyclePatcherTest {
             "install",
             "deploy"
         ));
-        DefaultLifecyclePatcher.patchDefaultLifecycle(new TurboBuilderConfig(true), phases);
+        PhaseOrderPatcher.reorderPhases(new TurboBuilderConfig(true), phases, Function.identity());
         assertEquals(List.of(
             "validate",
             "initialize",

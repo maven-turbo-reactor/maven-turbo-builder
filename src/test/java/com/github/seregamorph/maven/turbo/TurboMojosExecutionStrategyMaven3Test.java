@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
  * @author Sergey Chernov
  */
 @SuppressWarnings("CodeBlock2Expr")
-class TurboMojosExecutionStrategyTest {
+class TurboMojosExecutionStrategyMaven3Test {
 
     @Test
     public void shouldReorderAndSignalFullPhasesNoTestJarSupported() throws LifecycleExecutionException {
@@ -194,7 +194,13 @@ class TurboMojosExecutionStrategyTest {
 
         var strategy = new DefaultMojosExecutionStrategy();
         var eventsList = new ArrayList<String>();
-        var turboProjectExecutionListener = new TurboProjectExecutionListener();
+        var turboBuilderConfig = new TurboBuilderConfig(session);
+        var turboProjectExecutionListener = new TurboProjectExecutionListener(turboBuilderConfig) {
+            @Override
+            boolean isReorderPhases() {
+                return false;
+            }
+        };
         var turboMojoExecutionListener = new TurboMojoExecutionListener();
         var mojoRunner = new MojoExecutionRunner() {
             @Override
