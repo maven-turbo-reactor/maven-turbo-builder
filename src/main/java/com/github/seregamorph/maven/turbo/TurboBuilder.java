@@ -51,16 +51,20 @@ public class TurboBuilder implements Builder {
 
     public static final String BUILDER_TURBO = "turbo";
 
+    private final DefaultLifecycles defaultLifeCycles;
     private final LifecycleModuleBuilder lifecycleModuleBuilder;
 
     @Inject
     public TurboBuilder(
         DefaultLifecycles defaultLifeCycles,
-        LifecycleModuleBuilder lifecycleModuleBuilder,
-        TurboBuilderConfig config
+        LifecycleModuleBuilder lifecycleModuleBuilder
     ) {
+        this.defaultLifeCycles = defaultLifeCycles;
         this.lifecycleModuleBuilder = lifecycleModuleBuilder;
+    }
 
+    private void patchLifecycles(MavenSession session) {
+        TurboBuilderConfig config = TurboBuilderConfig.fromSession(session);
         String mavenVersion = Maven.class.getPackage().getImplementationVersion();
         // since Maven 4 changes of DefaultLifecycles have no effect
         if (mavenVersion != null && mavenVersion.startsWith("3.")) {
@@ -88,6 +92,7 @@ public class TurboBuilder implements Builder {
             session.getRequest().getDegreeOfConcurrency(),
             session.getProjects().size());
         logger.info("TurboBuilder will use {} threads to build {} modules", nThreads, session.getProjects().size());
+        patchLifecycles(session);
         boolean parallel = nThreads > 1;
         // Propagate the parallel flag to the root session and all of the cloned sessions in each project segment
         session.setParallel(parallel);

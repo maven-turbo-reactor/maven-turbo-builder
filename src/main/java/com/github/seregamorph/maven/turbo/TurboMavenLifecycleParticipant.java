@@ -5,7 +5,6 @@ import static com.github.seregamorph.maven.turbo.MavenPropertyUtils.isTrue;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.apache.maven.MavenExecutionException;
@@ -31,13 +30,6 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
 
     private static final Logger logger = LoggerFactory.getLogger(TurboMavenLifecycleParticipant.class);
 
-    private final TurboBuilderConfig config;
-
-    @Inject
-    public TurboMavenLifecycleParticipant(TurboBuilderConfig config) {
-        this.config = config;
-    }
-
     @Override
     public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
         if (isTurboBuilder(session)) {
@@ -54,6 +46,7 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
     }
 
     private void checkTestJarArtifacts(MavenSession session) throws MavenExecutionException {
+        TurboBuilderConfig config = TurboBuilderConfig.fromSession(session);
         if (!config.isTurboTestCompile()) {
             // test-jar is not supported, because package phase is now executed before compiling tests
             for (MavenProject project : session.getProjects()) {
@@ -83,6 +76,7 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
     }
 
     private void checkBuilderAndPhase(MavenSession session) {
+        TurboBuilderConfig config = TurboBuilderConfig.fromSession(session);
         // skip both compiling and running tests
         boolean mavenTestSkip = isTrue(getProperty(session, "maven.test.skip"));
         // skip only running tests

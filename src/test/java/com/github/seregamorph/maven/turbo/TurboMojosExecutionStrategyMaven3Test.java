@@ -194,8 +194,7 @@ class TurboMojosExecutionStrategyMaven3Test {
 
         var strategy = new DefaultMojosExecutionStrategy();
         var eventsList = new ArrayList<String>();
-        var turboBuilderConfig = new TurboBuilderConfig(session);
-        var turboProjectExecutionListener = new TurboProjectExecutionListener(turboBuilderConfig) {
+        var turboProjectExecutionListener = new TurboProjectExecutionListener() {
             @Override
             boolean isReorderPhases() {
                 return false;

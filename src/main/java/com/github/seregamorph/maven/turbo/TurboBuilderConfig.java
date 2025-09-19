@@ -1,6 +1,5 @@
 package com.github.seregamorph.maven.turbo;
 
-import javax.inject.Inject;
 import org.apache.maven.execution.MavenSession;
 
 /**
@@ -10,10 +9,9 @@ public class TurboBuilderConfig {
 
     private final boolean turboTestCompile;
 
-    @Inject
-    public TurboBuilderConfig(MavenSession session) {
+    static TurboBuilderConfig fromSession(MavenSession session) {
         String turboTestCompile = MavenPropertyUtils.getProperty(session, "turboTestCompile");
-        this.turboTestCompile = MavenPropertyUtils.isTrue(turboTestCompile);
+        return new TurboBuilderConfig(MavenPropertyUtils.isTrue(turboTestCompile));
     }
 
     TurboBuilderConfig(boolean turboTestCompile) {

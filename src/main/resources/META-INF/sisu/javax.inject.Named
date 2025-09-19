@@ -1,5 +1,4 @@
 com.github.seregamorph.maven.turbo.TurboBuilder
-com.github.seregamorph.maven.turbo.TurboBuilderConfig
 com.github.seregamorph.maven.turbo.TurboMavenLifecycleParticipant
 com.github.seregamorph.maven.turbo.TurboMojoExecutionListener
 com.github.seregamorph.maven.turbo.TurboProjectExecutionListener
