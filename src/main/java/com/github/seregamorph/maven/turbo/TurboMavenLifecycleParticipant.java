@@ -27,10 +27,10 @@ import org.slf4j.LoggerFactory;
 @Named
 public class TurboMavenLifecycleParticipant extends AbstractMavenLifecycleParticipant {
 
-    public static final String ANSI_RESET = "\u001B[0m";
-    public static final String ANSI_RED = "\u001B[31m";
-
     private static final Logger logger = LoggerFactory.getLogger(TurboMavenLifecycleParticipant.class);
+
+    private static final String ANSI_RESET = "\u001B[0m";
+    private static final String ANSI_RED = "\u001B[31m";
 
     private final DefaultLifecycles lifecycles;
 
@@ -74,7 +74,8 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
                                 + "configuration of the project has configured `test-jar` goal.\n"
                                 + "This can be solved in several ways:\n"
                                 + "1. Get rid of test-jar packaging if possible\n"
-                                + "2. Opt-in support of test-jar packaging via `-DturboTestCompile` CLI parameter "
+                                + "2. Disable test-jar goal execution when turbo builder is enabled\n"
+                                + "3. Opt-in support of test-jar packaging via `-DturboTestCompile` CLI parameter "
                                 + "or specified in .mvn/maven.config on a separate line",
                                 project.getFile());
                         }
@@ -116,10 +117,8 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
         // as well as checking for the test-jar goal also check it's bound to a phase
         // that actually exists as a common pattern to disable the goal when it's
         // defined in a parent pom is to use a goal like 'none' or 'never'
-        return (
-            pluginExecution.getGoals().contains("test-jar") &&
-                lifecycles.getPhaseToLifecycleMap().get(pluginExecution.getPhase()) != null
-        );
+        return pluginExecution.getGoals().contains("test-jar") &&
+                lifecycles.getPhaseToLifecycleMap().get(pluginExecution.getPhase()) != null;
     }
 
     private static boolean isTurboBuilder(MavenSession session) {
