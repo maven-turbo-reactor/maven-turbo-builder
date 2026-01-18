@@ -5,11 +5,13 @@ import static com.github.seregamorph.maven.turbo.MavenPropertyUtils.isTrue;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.apache.maven.MavenExecutionException;
 import org.apache.maven.SessionScoped;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.lifecycle.DefaultLifecycles;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
 import org.apache.maven.project.MavenProject;
@@ -29,6 +31,13 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
     public static final String ANSI_RED = "\u001B[31m";
 
     private static final Logger logger = LoggerFactory.getLogger(TurboMavenLifecycleParticipant.class);
+
+    private final DefaultLifecycles lifecycles;
+
+    @Inject
+    public TurboMavenLifecycleParticipant(DefaultLifecycles lifecycles) {
+        this.lifecycles = lifecycles;
+    }
 
     @Override
     public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
@@ -57,7 +66,7 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
                     .collect(Collectors.toList());
                 for (Plugin jarPlugin : jarPlugins) {
                     for (PluginExecution pluginExecution : jarPlugin.getExecutions()) {
-                        if (pluginExecution.getGoals().contains("test-jar")) {
+                        if (hasTestJarGoal(pluginExecution)) {
                             throw new MavenExecutionException("Maven started with turbo builder (`-b turbo` CLI "
                                 + "parameter or `-bturbo` in .mvn/maven.config) and it's not compatible with " + project
                                 + " test-jar project artifacts and dependencies because of build phase reordering "
@@ -101,6 +110,16 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
                 skippedReorderedPhases,
                 config.isTurboTestCompile() ? "" : "To compile tests, run with parameter `-DturboTestCompile`.\n");
         }
+    }
+
+    private boolean hasTestJarGoal(PluginExecution pluginExecution) {
+        // as well as checking for the test-jar goal also check it's bound to a phase
+        // that actually exists as a common pattern to disable the goal when it's
+        // defined in a parent pom is to use a goal like 'none' or 'never'
+        return (
+            pluginExecution.getGoals().contains("test-jar") &&
+                lifecycles.getPhaseToLifecycleMap().get(pluginExecution.getPhase()) != null
+        );
     }
 
     private static boolean isTurboBuilder(MavenSession session) {
