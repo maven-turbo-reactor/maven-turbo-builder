@@ -4,6 +4,7 @@ import static com.github.seregamorph.maven.turbo.MavenPropertyUtils.getProperty;
 import static com.github.seregamorph.maven.turbo.MavenPropertyUtils.isTrue;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -32,11 +33,13 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
     private static final String ANSI_RESET = "\u001B[0m";
     private static final String ANSI_RED = "\u001B[31m";
 
-    private final DefaultLifecycles lifecycles;
+    private final Set<String> lifecyclePhases;
 
     @Inject
     public TurboMavenLifecycleParticipant(DefaultLifecycles lifecycles) {
-        this.lifecycles = lifecycles;
+        // note: calling lifecycles.getPhaseToLifecycleMap() in constructor as for some reason
+        // same call from the "afterProjectsRead" may lead with NPE (DefaultLifecycles.lifecycles==null)
+        lifecyclePhases = lifecycles.getPhaseToLifecycleMap().keySet();
     }
 
     @Override
@@ -114,11 +117,13 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
     }
 
     private boolean hasTestJarGoal(PluginExecution pluginExecution) {
-        // as well as checking for the test-jar goal also check it's bound to a phase
+        // As well as checking for the test-jar goal also check it's bound to a phase
         // that actually exists as a common pattern to disable the goal when it's
-        // defined in a parent pom is to use a goal like 'none' or 'never'
-        return pluginExecution.getGoals().contains("test-jar") &&
-                lifecycles.getPhaseToLifecycleMap().get(pluginExecution.getPhase()) != null;
+        // defined in a parent pom is to use a goal like 'none' or 'never'.
+        // Note: phase "null" means the default goal phase (package)
+        String phase = pluginExecution.getPhase();
+        return pluginExecution.getGoals().contains("test-jar")
+            && (phase == null || lifecyclePhases.contains(phase));
     }
 
     private static boolean isTurboBuilder(MavenSession session) {
