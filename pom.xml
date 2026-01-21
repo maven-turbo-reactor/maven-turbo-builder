@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>maven-turbo-builder</artifactId>
-    <version>0.13-SNAPSHOT</version>
+    <version>0.13</version>
     <packaging>jar</packaging>
     <name>maven-turbo-builder</name>
     <description>
