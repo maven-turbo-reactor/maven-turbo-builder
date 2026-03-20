@@ -73,7 +73,7 @@ public class TurboBuilder implements Builder {
             // we patch the default lifecycle in-place only when "-b turbo" parameter is specified
             for (Lifecycle lifecycle : defaultLifeCycles.getLifeCycles()) {
                 if ("default".equals(lifecycle.getId())) {
-                    logger.warn("Turbo builder: patching default lifecycle 🏎️ (reorder package and test phases)");
+                    logger.info("Turbo builder: patching default lifecycle 🏎️ (reorder package and test phases)");
                     TurboBuilderConfig config = TurboBuilderConfig.fromSession(session);
                     originalPhases = PhaseOrderPatcher.reorderPhases(config, lifecycle.getPhases(), Function.identity());
                 }
@@ -81,7 +81,7 @@ public class TurboBuilder implements Builder {
         } else {
             // since Maven 4 changes of DefaultLifecycles have no effect, instead
             // the MojoExecution are reordered in TurboProjectExecutionListener
-            logger.warn("Turbo builder: package and test phases are reordered 🏎");
+            logger.info("Turbo builder: package and test phases are reordered 🏎");
         }
         return originalPhases;
     }
