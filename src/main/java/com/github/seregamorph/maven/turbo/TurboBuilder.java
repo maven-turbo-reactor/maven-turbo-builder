@@ -17,7 +17,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.lifecycle.DefaultLifecycles;
 import org.apache.maven.lifecycle.internal.BuildThreadFactory;
 import org.apache.maven.lifecycle.internal.LifecycleModuleBuilder;
 import org.apache.maven.lifecycle.internal.ProjectBuildList;
@@ -49,15 +48,12 @@ public class TurboBuilder implements Builder {
 
     public static final String BUILDER_TURBO = "turbo";
 
-    private final DefaultLifecycles defaultLifeCycles;
     private final LifecycleModuleBuilder lifecycleModuleBuilder;
 
     @Inject
     public TurboBuilder(
-        DefaultLifecycles defaultLifeCycles,
         LifecycleModuleBuilder lifecycleModuleBuilder
     ) {
-        this.defaultLifeCycles = defaultLifeCycles;
         this.lifecycleModuleBuilder = lifecycleModuleBuilder;
     }
 
