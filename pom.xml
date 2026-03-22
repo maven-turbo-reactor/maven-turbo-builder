@@ -40,8 +40,21 @@
         </license>
     </licenses>
 
+    <properties>
+        <maven.version>4.0.0-rc-5</maven.version>
+    </properties>
+
     <dependencies>
         <dependency>
+            <!-- For support of Maven 3 -->
+            <groupId>org.eclipse.sisu</groupId>
+            <artifactId>org.eclipse.sisu.inject</artifactId>
+            <version>1.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <!-- For support of Maven 4 -->
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
             <scope>provided</scope>

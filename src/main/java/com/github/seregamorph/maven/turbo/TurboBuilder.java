@@ -13,13 +13,10 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.lifecycle.DefaultLifecycles;
-import org.apache.maven.lifecycle.Lifecycle;
 import org.apache.maven.lifecycle.internal.BuildThreadFactory;
 import org.apache.maven.lifecycle.internal.LifecycleModuleBuilder;
 import org.apache.maven.lifecycle.internal.ProjectBuildList;
@@ -51,51 +48,13 @@ public class TurboBuilder implements Builder {
 
     public static final String BUILDER_TURBO = "turbo";
 
-    private final DefaultLifecycles defaultLifeCycles;
     private final LifecycleModuleBuilder lifecycleModuleBuilder;
 
     @Inject
     public TurboBuilder(
-        DefaultLifecycles defaultLifeCycles,
         LifecycleModuleBuilder lifecycleModuleBuilder
     ) {
-        this.defaultLifeCycles = defaultLifeCycles;
         this.lifecycleModuleBuilder = lifecycleModuleBuilder;
-    }
-
-    /**
-     * @return original list of phases if reordered or null
-     */
-    /*@Nullable*/
-    private List<String> patchLifecycles(MavenSession session) {
-        /*@Nullable*/ List<String> originalPhases = null;
-        if (PhaseOrderPatcher.isReorderOnBootstrap()) {
-            // we patch the default lifecycle in-place only when "-b turbo" parameter is specified
-            for (Lifecycle lifecycle : defaultLifeCycles.getLifeCycles()) {
-                if ("default".equals(lifecycle.getId())) {
-                    logger.info("Turbo builder: patching default lifecycle 🏎️ (reorder package and test phases)");
-                    TurboBuilderConfig config = TurboBuilderConfig.fromSession(session);
-                    originalPhases = PhaseOrderPatcher.reorderPhases(config, lifecycle.getPhases(), Function.identity());
-                }
-            }
-        } else {
-            // since Maven 4 changes of DefaultLifecycles have no effect, instead
-            // the MojoExecution are reordered in TurboProjectExecutionListener
-            logger.info("Turbo builder: package and test phases are reordered 🏎");
-        }
-        return originalPhases;
-    }
-
-    private void restoreLifecycles(/*@Nullable*/ List<String> originalPhases) {
-        if (PhaseOrderPatcher.isReorderOnBootstrap() && originalPhases != null) {
-            // we need this only for Maven Daemon 1.x using Maven 3
-            defaultLifeCycles.getLifeCycles().forEach(lifecycle -> {
-                if ("default".equals(lifecycle.getId())) {
-                    logger.debug("Restoring original order of phases");
-                    PhaseOrderPatcher.restorePhases(originalPhases, lifecycle.getPhases());
-                }
-            });
-        }
     }
 
     @Override
@@ -106,12 +65,8 @@ public class TurboBuilder implements Builder {
         List<TaskSegment> taskSegments,
         ReactorBuildStatus reactorBuildStatus
     ) throws InterruptedException {
-        /*@Nullable*/ List<String> originalPhases = patchLifecycles(session);
-        try {
-            buildImpl(session, reactorContext, projectBuilds, taskSegments);
-        } finally {
-            restoreLifecycles(originalPhases);
-        }
+        logger.info("Turbo builder: package and test phases are reordered 🏎");
+        buildImpl(session, reactorContext, projectBuilds, taskSegments);
     }
 
     private void buildImpl(

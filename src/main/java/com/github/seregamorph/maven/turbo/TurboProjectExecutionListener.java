@@ -29,16 +29,9 @@ public class TurboProjectExecutionListener implements ProjectExecutionListener {
                 })
                 .collect(Collectors.toList());
 
-            if (isReorderPhases()) {
-                TurboBuilderConfig config = TurboBuilderConfig.fromSession(event.getSession());
-                PhaseOrderPatcher.reorderPhases(config, event.getExecutionPlan(), MojoUtils::getMojoPhase);
-            }
+            TurboBuilderConfig config = TurboBuilderConfig.fromSession(event.getSession());
+            PhaseOrderPatcher.reorderPhases(config, event.getExecutionPlan(), MojoUtils::getMojoPhase);
         });
-    }
-
-    boolean isReorderPhases() {
-        // opposite to ordering on the bootstrap - order during the mojo execution
-        return !PhaseOrderPatcher.isReorderOnBootstrap();
     }
 
     @Override
