@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.maven.execution.DefaultMavenExecutionRequest;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.execution.MojoExecutionEvent;
@@ -32,10 +33,6 @@ class TurboMojosExecutionStrategyMaven3Test {
             "process-resources",
             "compile",
             "process-classes",
-            // note: already reordered before test phases
-            "prepare-package",
-            "package",
-
             "generate-test-sources",
             "process-test-sources",
             "generate-test-resources",
@@ -43,6 +40,8 @@ class TurboMojosExecutionStrategyMaven3Test {
             "test-compile",
             "process-test-classes",
             "test",
+            "prepare-package",
+            "package",
             "pre-integration-test",
             "integration-test",
             "post-integration-test",
@@ -96,10 +95,9 @@ class TurboMojosExecutionStrategyMaven3Test {
             "process-test-resources",
             "test-compile",
             "process-test-classes",
-            // note: already reordered before test phases
+            "test",
             "prepare-package",
             "package",
-            "test",
             "pre-integration-test",
             "integration-test",
             "post-integration-test",
@@ -116,15 +114,15 @@ class TurboMojosExecutionStrategyMaven3Test {
             "exec:process-resources",
             "exec:compile",
             "exec:process-classes",
+            "exec:prepare-package",
+            "exec:package",
+            "signal",
             "exec:generate-test-sources",
             "exec:process-test-sources",
             "exec:generate-test-resources",
             "exec:process-test-resources",
             "exec:test-compile",
             "exec:process-test-classes",
-            "exec:prepare-package",
-            "exec:package",
-            "signal",
             "exec:test",
             "exec:pre-integration-test",
             "exec:integration-test",
@@ -185,7 +183,7 @@ class TurboMojosExecutionStrategyMaven3Test {
                 execution.setLifecyclePhase(phase);
                 return execution;
             })
-            .toList();
+            .collect(Collectors.toList());
 
         var request = new DefaultMavenExecutionRequest();
         var session = new MavenSession(null, null, request, null);
@@ -194,12 +192,7 @@ class TurboMojosExecutionStrategyMaven3Test {
 
         var strategy = new DefaultMojosExecutionStrategy();
         var eventsList = new ArrayList<String>();
-        var turboProjectExecutionListener = new TurboProjectExecutionListener() {
-            @Override
-            boolean isReorderPhases() {
-                return false;
-            }
-        };
+        var turboProjectExecutionListener = new TurboProjectExecutionListener();
         var turboMojoExecutionListener = new TurboMojoExecutionListener();
         var mojoRunner = new MojoExecutionRunner() {
             @Override
