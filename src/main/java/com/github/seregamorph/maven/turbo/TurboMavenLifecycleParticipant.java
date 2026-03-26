@@ -44,7 +44,7 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
 
     @Override
     public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
-        if (isTurboBuilder(session)) {
+        if (TurboBuilder.isTurboBuilder(session)) {
             checkTestJarArtifacts(session);
             checkBuilderAndPhase(session);
         }
@@ -52,7 +52,7 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
 
     @Override
     public void afterSessionEnd(MavenSession session) {
-        if (isTurboBuilder(session)) {
+        if (TurboBuilder.isTurboBuilder(session)) {
             checkBuilderAndPhase(session);
         }
     }
@@ -124,10 +124,5 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
         String phase = pluginExecution.getPhase();
         return pluginExecution.getGoals().contains("test-jar")
             && (phase == null || lifecyclePhases.contains(phase));
-    }
-
-    private static boolean isTurboBuilder(MavenSession session) {
-        String builderId = session.getRequest().getBuilderId();
-        return TurboBuilder.BUILDER_TURBO.equals(builderId);
     }
 }

@@ -57,6 +57,11 @@ public class TurboBuilder implements Builder {
         this.lifecycleModuleBuilder = lifecycleModuleBuilder;
     }
 
+    static boolean isTurboBuilder(MavenSession session) {
+        String builderId = session.getRequest().getBuilderId();
+        return BUILDER_TURBO.equals(builderId);
+    }
+
     @Override
     public void build(
         MavenSession session,

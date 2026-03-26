@@ -64,15 +64,21 @@ public class TurboLifecycleExecutor implements LifecycleExecutor {
     }
 
     @Override
-    public MavenExecutionPlan calculateExecutionPlan(MavenSession session, String... tasks) throws PluginNotFoundException, PluginResolutionException, PluginDescriptorParsingException, MojoNotFoundException, NoPluginFoundForPrefixException, InvalidPluginDescriptorException, PluginManagerException, LifecyclePhaseNotFoundException, LifecycleNotFoundException, PluginVersionResolutionException {
+    public MavenExecutionPlan calculateExecutionPlan(MavenSession session, String... tasks) throws PluginNotFoundException,
+        PluginResolutionException, PluginDescriptorParsingException, MojoNotFoundException, NoPluginFoundForPrefixException,
+        InvalidPluginDescriptorException, PluginManagerException, LifecyclePhaseNotFoundException, LifecycleNotFoundException,
+        PluginVersionResolutionException {
         MavenExecutionPlan executionPlan = delegate().calculateExecutionPlan(session, tasks);
-        return updateExecutionPlan(session, executionPlan);
+        return resolveExecutionPlan(session, executionPlan);
     }
 
     @Override
-    public MavenExecutionPlan calculateExecutionPlan(MavenSession session, boolean setup, String... tasks) throws PluginNotFoundException, PluginResolutionException, PluginDescriptorParsingException, MojoNotFoundException, NoPluginFoundForPrefixException, InvalidPluginDescriptorException, PluginManagerException, LifecyclePhaseNotFoundException, LifecycleNotFoundException, PluginVersionResolutionException {
+    public MavenExecutionPlan calculateExecutionPlan(MavenSession session, boolean setup, String... tasks) throws PluginNotFoundException,
+        PluginResolutionException, PluginDescriptorParsingException, MojoNotFoundException, NoPluginFoundForPrefixException,
+        InvalidPluginDescriptorException, PluginManagerException, LifecyclePhaseNotFoundException, LifecycleNotFoundException,
+        PluginVersionResolutionException {
         MavenExecutionPlan executionPlan = delegate().calculateExecutionPlan(session, setup, tasks);
-        return updateExecutionPlan(session, executionPlan);
+        return resolveExecutionPlan(session, executionPlan);
     }
 
     @Override
@@ -81,7 +87,9 @@ public class TurboLifecycleExecutor implements LifecycleExecutor {
     }
 
     @Override
-    public void calculateForkedExecutions(MojoExecution mojoExecution, MavenSession session) throws MojoNotFoundException, PluginNotFoundException, PluginResolutionException, PluginDescriptorParsingException, NoPluginFoundForPrefixException, InvalidPluginDescriptorException, LifecyclePhaseNotFoundException, LifecycleNotFoundException, PluginVersionResolutionException {
+    public void calculateForkedExecutions(MojoExecution mojoExecution, MavenSession session) throws MojoNotFoundException,
+        PluginNotFoundException, PluginResolutionException, PluginDescriptorParsingException, NoPluginFoundForPrefixException,
+        InvalidPluginDescriptorException, LifecyclePhaseNotFoundException, LifecycleNotFoundException, PluginVersionResolutionException {
         delegate().calculateForkedExecutions(mojoExecution, session);
     }
 
@@ -90,15 +98,19 @@ public class TurboLifecycleExecutor implements LifecycleExecutor {
         return delegate().executeForkedExecutions(mojoExecution, session);
     }
 
-    private MavenExecutionPlan updateExecutionPlan(MavenSession session, MavenExecutionPlan executionPlan) {
-        TurboBuilderConfig config = TurboBuilderConfig.fromSession(session);
-        List<MojoExecution> mojoExecutions = executionPlan.getMojoExecutions();
-        PhaseOrderPatcher.reorderPhases(config, mojoExecutions, MojoUtils::getMojoPhase);
-        List<ExecutionPlanItem> executionPlanItems = new ArrayList<>();
-        for (MojoExecution mojoExecution : mojoExecutions) {
-            executionPlanItems.add(new ExecutionPlanItem(mojoExecution));
+    private MavenExecutionPlan resolveExecutionPlan(MavenSession session, MavenExecutionPlan defaultExecutionPlan) {
+        if (TurboBuilder.isTurboBuilder(session)) {
+            TurboBuilderConfig config = TurboBuilderConfig.fromSession(session);
+            List<MojoExecution> mojoExecutions = defaultExecutionPlan.getMojoExecutions();
+            PhaseOrderPatcher.reorderPhases(config, mojoExecutions, MojoUtils::getMojoPhase);
+            List<ExecutionPlanItem> executionPlanItems = new ArrayList<>();
+            for (MojoExecution mojoExecution : mojoExecutions) {
+                executionPlanItems.add(new ExecutionPlanItem(mojoExecution));
+            }
+            return new MavenExecutionPlan(executionPlanItems, defaultLifeCycles);
+        } else {
+            return defaultExecutionPlan;
         }
-        return new MavenExecutionPlan(executionPlanItems, defaultLifeCycles);
     }
 
     private DefaultLifecycleExecutor delegate() {
