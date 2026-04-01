@@ -11,8 +11,8 @@ By default, to build any module in a multi-module project Maven first resolves a
 dependencies. This is a fundamental behaviour which is built-in and strongly enforced because of back compatibility.
 This significantly reduces possible concurrency and in a multi-core system CPU cores are loaded unevenly. To enhance
 parallelism this extension does two things:
-* change the order of `*test*` phases and `*package*`, `package` is executed before `test` (not after as default)
-* schedule module build of downstream dependencies when `package` phase was executed, not waiting for all phases (like
+* changes the order of `*test*` phases and `*package*`, `package` is executed before `test` (not after as default)
+* schedules module build of downstream dependencies when `package` phase was executed, not waiting for all phases (like
   `test`, `integration-test`, `install`, `deploy`, etc.)
 
 As a result, depending on the particular project, this boosts the build and increases CPU utilization to maximum.
@@ -74,6 +74,8 @@ To enable this extension by default, add line to `.mvn/maven.config` under root 
 -bturbo
 -T1C
 ```
+Note, that for many setups, e.g. Apple MacBook Pro, `-T0.5C` can be more efficient and faster than `-T1C` (as only half
+of the CPU cores are powerful).
 
 Example adoption:
 * [Maven Surefire, in combination with Maven Surefire Cached extension](https://github.com/seregamorph/maven-surefire/pull/2) (20% faster build + cache complementary)
