@@ -5,12 +5,12 @@ import java.util.concurrent.Callable;
 /**
  * @author Sergey Chernov
  */
-public class OrderedCallable<T> implements Callable<T>, Comparable<OrderedCallable<T>> {
+class OrderedCallable<T> implements Callable<T>, Comparable<OrderedCallable<T>> {
 
     private final int order;
     private final Callable<T> callable;
 
-    public OrderedCallable(int order, Callable<T> callable) {
+    OrderedCallable(int order, Callable<T> callable) {
         this.order = order;
         this.callable = callable;
     }

@@ -4,6 +4,9 @@ import java.util.Objects;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.descriptor.MojoDescriptor;
 
+/**
+ * @author Sergey Chernov
+ */
 final class MojoUtils {
 
     static String getMojoPhase(MojoExecution mojoExecution) {
