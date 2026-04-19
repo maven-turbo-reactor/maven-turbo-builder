@@ -30,7 +30,8 @@ public class TurboProjectExecutionListener implements ProjectExecutionListener {
                 .collect(Collectors.toList());
 
             TurboBuilderConfig config = TurboBuilderConfig.fromSession(event.getSession());
-            PhaseOrderPatcher.reorderPhases(config, event.getExecutionPlan(), MojoUtils::getMojoPhase);
+            PhaseOrderPatcher.reorderPhases(config.isTurboTestCompile(), event.getExecutionPlan(),
+                MojoUtils::getMojoPhase);
         });
     }
 

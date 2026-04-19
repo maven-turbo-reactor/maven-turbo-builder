@@ -102,7 +102,7 @@ public class TurboLifecycleExecutor implements LifecycleExecutor {
         if (TurboBuilder.isTurboBuilder(session)) {
             TurboBuilderConfig config = TurboBuilderConfig.fromSession(session);
             List<MojoExecution> mojoExecutions = defaultExecutionPlan.getMojoExecutions();
-            PhaseOrderPatcher.reorderPhases(config, mojoExecutions, MojoUtils::getMojoPhase);
+            PhaseOrderPatcher.reorderPhases(config.isTurboTestCompile(), mojoExecutions, MojoUtils::getMojoPhase);
             List<ExecutionPlanItem> executionPlanItems = new ArrayList<>();
             for (MojoExecution mojoExecution : mojoExecutions) {
                 executionPlanItems.add(new ExecutionPlanItem(mojoExecution));

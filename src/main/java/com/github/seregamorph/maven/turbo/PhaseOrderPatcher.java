@@ -81,7 +81,7 @@ class PhaseOrderPatcher {
      * @return list of phases before the reordering
      */
     static <T> List<String> reorderPhases(
-        TurboBuilderConfig config,
+        boolean compileTestsBeforePackage,
         List<T> phaseItems,
         Function<T, String> phaseExtractor
     ) {
@@ -94,7 +94,7 @@ class PhaseOrderPatcher {
             String lifecyclePhase = phaseExtractor.apply(lifecycleItem);
             originalPhases.add(lifecyclePhase);
             if (firstTestItemIndex < 0
-                && (config.isTurboTestCompile() ? isTest(lifecyclePhase) : isAnyTest(lifecyclePhase))) {
+                && (compileTestsBeforePackage ? isTest(lifecyclePhase) : isAnyTest(lifecyclePhase))) {
                 firstTestItemIndex = i;
             }
             if (isPackage(lifecyclePhase)) {
