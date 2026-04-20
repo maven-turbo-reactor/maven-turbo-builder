@@ -110,16 +110,6 @@ class PhaseOrderPatcher {
         return originalPhases;
     }
 
-    static void restorePhases(List<String> originalPhases, List<String> targetPhases) {
-        if (originalPhases.size() != targetPhases.size()) {
-            throw new IllegalStateException("Cannot restore original list of phases as they have different sizes: "
-                + "originalPhases=" + originalPhases + ", targetPhases=" + targetPhases);
-        }
-        for (int i = 0; i < originalPhases.size(); i++) {
-            targetPhases.set(i, originalPhases.get(i));
-        }
-    }
-
     static boolean isPackage(String phase) {
         return Arrays.asList("prepare-package", "package")
             .contains(phase);

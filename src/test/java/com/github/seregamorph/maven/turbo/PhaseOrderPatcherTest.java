@@ -73,9 +73,6 @@ class PhaseOrderPatcherTest {
         var beforeReorderingPhases2 = PhaseOrderPatcher.reorderPhases(false, phases, Function.identity());
         assertEquals(reorderedMaven3Phases, beforeReorderingPhases2);
         assertEquals(reorderedMaven3Phases, phases);
-        // restore
-        PhaseOrderPatcher.restorePhases(originalMaven3Phases, phases);
-        assertEquals(originalMaven3Phases, phases);
     }
 
     @Test
@@ -113,8 +110,5 @@ class PhaseOrderPatcherTest {
         var beforeReorderingPhases2 = PhaseOrderPatcher.reorderPhases(true, phases, Function.identity());
         assertEquals(reorderedMaven3Phases, beforeReorderingPhases2);
         assertEquals(reorderedMaven3Phases, phases);
-        // restore
-        PhaseOrderPatcher.restorePhases(originalMaven3Phases, phases);
-        assertEquals(originalMaven3Phases, phases);
     }
 }
