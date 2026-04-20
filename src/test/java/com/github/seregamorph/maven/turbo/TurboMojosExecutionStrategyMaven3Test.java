@@ -13,6 +13,8 @@ import org.apache.maven.lifecycle.LifecycleExecutionException;
 import org.apache.maven.plugin.DefaultMojosExecutionStrategy;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionRunner;
+import org.apache.maven.plugin.descriptor.MojoDescriptor;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.project.MavenProject;
 import org.junit.jupiter.api.Test;
 
@@ -75,7 +77,7 @@ class TurboMojosExecutionStrategyMaven3Test {
             "exec:install",
             "exec:deploy"
         );
-        shouldReorderAndSignalImpl(phases, expectedEvents);
+        shouldReorderAndSignalImpl(false, phases, expectedEvents);
     }
 
     @Test
@@ -114,15 +116,15 @@ class TurboMojosExecutionStrategyMaven3Test {
             "exec:process-resources",
             "exec:compile",
             "exec:process-classes",
-            "exec:prepare-package",
-            "exec:package",
-            "signal",
             "exec:generate-test-sources",
             "exec:process-test-sources",
             "exec:generate-test-resources",
             "exec:process-test-resources",
             "exec:test-compile",
             "exec:process-test-classes",
+            "exec:prepare-package",
+            "exec:package",
+            "signal",
             "exec:test",
             "exec:pre-integration-test",
             "exec:integration-test",
@@ -131,7 +133,7 @@ class TurboMojosExecutionStrategyMaven3Test {
             "exec:install",
             "exec:deploy"
         );
-        shouldReorderAndSignalImpl(phases, expectedEvents);
+        shouldReorderAndSignalImpl(true, phases, expectedEvents);
     }
 
     @Test
@@ -173,13 +175,25 @@ class TurboMojosExecutionStrategyMaven3Test {
             "exec:test"
         );
 
-        shouldReorderAndSignalImpl(phases, expectedEvents);
+        shouldReorderAndSignalImpl(false, phases, expectedEvents);
     }
 
-    private static void shouldReorderAndSignalImpl(List<String> phases, List<String> expectedEvents) throws LifecycleExecutionException {
+    private static void shouldReorderAndSignalImpl(
+        boolean hasTestJar,
+        List<String> phases,
+        List<String> expectedEvents
+    ) throws LifecycleExecutionException {
         var executionPlan = phases.stream()
             .map(phase -> {
-                var execution = new MojoExecution(null);
+                var mojoDescriptor = new MojoDescriptor();
+                var pluginDescriptor = new PluginDescriptor();
+                mojoDescriptor.setPluginDescriptor(pluginDescriptor);
+                if (hasTestJar && "package".equals(phase)) {
+                    pluginDescriptor.setGroupId("org.apache.maven.plugins");
+                    pluginDescriptor.setArtifactId("maven-jar-plugin");
+                    mojoDescriptor.setGoal("test-jar");
+                }
+                var execution = new MojoExecution(mojoDescriptor);
                 execution.setLifecyclePhase(phase);
                 return execution;
             })
