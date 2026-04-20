@@ -97,7 +97,7 @@ class PhaseOrderPatcher {
                 && (compileTestsBeforePackage ? isTest(lifecyclePhase) : isAnyTest(lifecyclePhase))) {
                 firstTestItemIndex = i;
             }
-            if (isPackage(lifecyclePhase)) {
+            if (isAnyPackage(lifecyclePhase)) {
                 packageItems.add(lifecycleItem);
                 lastPackageItem = i;
             }
@@ -110,7 +110,7 @@ class PhaseOrderPatcher {
         return originalPhases;
     }
 
-    static boolean isPackage(String phase) {
+    static boolean isAnyPackage(String phase) {
         return Arrays.asList("prepare-package", "package")
             .contains(phase);
     }

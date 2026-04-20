@@ -1,6 +1,6 @@
 package com.github.seregamorph.maven.turbo;
 
-import static com.github.seregamorph.maven.turbo.PhaseOrderPatcher.isPackage;
+import static com.github.seregamorph.maven.turbo.PhaseOrderPatcher.isAnyPackage;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,7 +28,7 @@ public class TurboProjectExecutionListener implements ProjectExecutionListener {
             execution.packageMojos = mojoExecutions.stream()
                 .filter(mojo -> {
                     String lifecyclePhase = mojo.getLifecyclePhase();
-                    return lifecyclePhase != null && isPackage(lifecyclePhase);
+                    return lifecyclePhase != null && isAnyPackage(lifecyclePhase);
                 })
                 .collect(Collectors.toList());
 
