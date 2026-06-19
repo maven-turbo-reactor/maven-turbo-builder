@@ -86,6 +86,8 @@ Compatibility:
 * this extension can be used with [Apache Maven Build Cache Extension](https://maven.apache.org/extensions/maven-build-cache-extension/)
 * this extension can be used with [Develocity Maven Extension](https://gradle.com/help/maven-extension/)
 * this extension can be used with [Dynamic Test Distribution for Maven](https://github.com/seregamorph/test-distribution)
+* IDEA can work in "delegate to Maven" build and run tests
+* extension supports `-am` (`--also-make`) and `-rf` (`--resume-from`) build flags
 
 Supported versions:
 * `Java` 8+
