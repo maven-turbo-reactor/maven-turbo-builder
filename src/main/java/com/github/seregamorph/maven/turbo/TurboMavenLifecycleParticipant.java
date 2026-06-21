@@ -3,14 +3,10 @@ package com.github.seregamorph.maven.turbo;
 import static com.github.seregamorph.maven.turbo.MavenPropertyUtils.getProperty;
 import static com.github.seregamorph.maven.turbo.MavenPropertyUtils.isTrue;
 
-import java.util.Set;
-import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.maven.AbstractMavenLifecycleParticipant;
-import org.apache.maven.MavenExecutionException;
 import org.apache.maven.SessionScoped;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.lifecycle.DefaultLifecycles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,17 +24,8 @@ public class TurboMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
     private static final String ANSI_RESET = "\u001B[0m";
     private static final String ANSI_RED = "\u001B[31m";
 
-    private final Set<String> lifecyclePhases;
-
-    @Inject
-    public TurboMavenLifecycleParticipant(DefaultLifecycles lifecycles) {
-        // note: calling lifecycles.getPhaseToLifecycleMap() in constructor as for some reason
-        // same call from the "afterProjectsRead" may lead with NPE (DefaultLifecycles.lifecycles==null)
-        lifecyclePhases = lifecycles.getPhaseToLifecycleMap().keySet();
-    }
-
     @Override
-    public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
+    public void afterProjectsRead(MavenSession session) {
         if (TurboBuilder.isTurboBuilder(session)) {
             checkBuilderAndPhase(session);
         }
