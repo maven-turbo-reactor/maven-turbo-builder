@@ -76,9 +76,9 @@ class PhaseOrderPatcher {
 */
 
     /**
-     * Reorders Maven DefaultLifecycles (List of String phases) - for Maven 3, or List of MojoExecution - for Maven 4
+     * Reorders the List of MojoExecution
      *
-     * @return list of phases before the reordering
+     * @return the original list before reordering
      */
     static <T> List<String> reorderPhases(
         boolean compileTestsBeforePackage,
