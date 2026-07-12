@@ -111,13 +111,17 @@ class PhaseOrderPatcher {
     }
 
     static boolean isAnyPackage(String phase) {
-        return Arrays.asList("prepare-package", "package")
+        // maven 3: "prepare-package"
+        // maven 3 and 4: "package"
+        // maven 4: "before:package", "after:package"
+        return Arrays.asList("prepare-package", "package", "before:package", "after:package")
             .contains(phase);
     }
 
     private static boolean isTest(String phase) {
-        // "test"
-        return "test".equals(phase);
+        // maven 3 and 4: "test"
+        // maven 4: "before:test", "after:test"
+        return Arrays.asList("before:test", "test", "after:test").contains(phase);
     }
 
     static boolean isAnyTest(String phase) {
@@ -126,7 +130,16 @@ class PhaseOrderPatcher {
         // "test-compile", "process-test-classes", "test", "pre-integration-test", "integration-test",
         // "post-integration-test"
         // Since Maven 4 also:
-        // "after:resources", "after:test-resources"
+        // "before:test-sources",
+        // "test-sources",
+        // "after:test-sources",
+        // "before:test-resources",
+        // "test-resources",
+        // "after:test-resources",
+        // "before:test-compile",
+        // "after:test-compile",
+        // "before:test"
+        // "after:test"
         return "test".equals(phase)
             || phase.contains(":test") // since maven 4
             || phase.contains("-test-")
