@@ -44,7 +44,7 @@
         <!-- https://maven.apache.org/guides/mini/guide-reproducible-builds.html -->
         <project.build.outputTimestamp>2026-08-07T08:07:02Z</project.build.outputTimestamp>
 
-        <maven.version>4.0.0-rc-6</maven.version>
+        <maven.version>4.0.0-rc-7</maven.version>
     </properties>
 
     <dependencies>
