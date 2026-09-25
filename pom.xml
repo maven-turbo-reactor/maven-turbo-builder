@@ -8,10 +8,10 @@
         <version>0.3</version>
     </parent>
 
-    <artifactId>maven-turbo-builder</artifactId>
-    <version>1.4-SNAPSHOT</version>
+    <artifactId>maven-vturbo-builder</artifactId>
+    <version>0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>maven-turbo-builder</name>
+    <name>maven-vturbo-builder</name>
     <description>
         Maven Extension for efficient multi-module build scheduling
     </description>
@@ -45,6 +45,10 @@
         <project.build.outputTimestamp>2026-08-07T08:07:02Z</project.build.outputTimestamp>
 
         <maven.version>4.0.0-rc-7</maven.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.testSource>21</maven.compiler.testSource>
+        <maven.compiler.testTarget>21</maven.compiler.testTarget>
     </properties>
 
     <dependencies>

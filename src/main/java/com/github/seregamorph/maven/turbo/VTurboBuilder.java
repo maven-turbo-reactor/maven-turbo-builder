@@ -7,17 +7,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.lifecycle.internal.BuildThreadFactory;
 import org.apache.maven.lifecycle.internal.LifecycleModuleBuilder;
 import org.apache.maven.lifecycle.internal.ProjectBuildList;
 import org.apache.maven.lifecycle.internal.ProjectSegment;
@@ -41,25 +40,25 @@ import org.slf4j.LoggerFactory;
  * @author Sergey Chernov
  */
 @Singleton
-@Named(TurboBuilder.BUILDER_TURBO)
-public class TurboBuilder implements Builder {
+@Named(VTurboBuilder.BUILDER_VTURBO)
+public class VTurboBuilder implements Builder {
 
-    private static final Logger logger = LoggerFactory.getLogger(TurboBuilder.class);
+    private static final Logger logger = LoggerFactory.getLogger(VTurboBuilder.class);
 
-    public static final String BUILDER_TURBO = "turbo";
+    public static final String BUILDER_VTURBO = "vturbo";
 
     private final LifecycleModuleBuilder lifecycleModuleBuilder;
 
     @Inject
-    public TurboBuilder(
+    public VTurboBuilder(
         LifecycleModuleBuilder lifecycleModuleBuilder
     ) {
         this.lifecycleModuleBuilder = lifecycleModuleBuilder;
     }
 
-    static boolean isTurboBuilder(MavenSession session) {
+    static boolean isVTurboBuilder(MavenSession session) {
         String builderId = session.getRequest().getBuilderId();
-        return BUILDER_TURBO.equals(builderId);
+        return BUILDER_VTURBO.equals(builderId);
     }
 
     @Override
@@ -91,8 +90,8 @@ public class TurboBuilder implements Builder {
             segment.getSession().setParallel(parallel);
         }
         // executor supporting task ordering, prioritize building modules that have more downstream dependencies
-        ExecutorService executor = new ThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS,
-            new PriorityBlockingQueue<>(), new BuildThreadFactory()) {
+        var executor = new ThreadPoolExecutor(nThreads, Integer.MAX_VALUE, 0L, TimeUnit.MILLISECONDS,
+            new PriorityBlockingQueue<>(), Thread.ofVirtual().factory()) {
             @Override
             protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
                 return new OrderedFutureTask<>((OrderedCallable<T>) callable);
@@ -100,14 +99,21 @@ public class TurboBuilder implements Builder {
         };
         SignalingExecutorCompletionService service = new SignalingExecutorCompletionService(executor);
 
+        var semaphore = new Semaphore(nThreads);
         for (TaskSegment taskSegment : taskSegments) {
             ProjectBuildList segmentProjectBuilds = projectBuilds.getByTaskSegment(taskSegment);
             Map<MavenProject, ProjectSegment> projectBuildMap = projectBuilds.selectSegment(taskSegment);
             try {
-                ConcurrencyDependencyGraph analyzer =
-                    new ConcurrencyDependencyGraph(segmentProjectBuilds, session.getProjectDependencyGraph());
+                var analyzer = new ConcurrencyDependencyGraph(segmentProjectBuilds, session.getProjectDependencyGraph());
                 multiThreadedProjectTaskSegmentBuild(
-                    analyzer, reactorContext, session, service, taskSegment, projectBuildMap);
+                    semaphore,
+                    analyzer,
+                    reactorContext,
+                    session,
+                    service,
+                    taskSegment,
+                    projectBuildMap
+                );
                 if (reactorContext.getReactorBuildStatus().isHalted()) {
                     break;
                 }
@@ -122,6 +128,7 @@ public class TurboBuilder implements Builder {
     }
 
     private void multiThreadedProjectTaskSegmentBuild(
+        Semaphore semaphore,
         ConcurrencyDependencyGraph analyzer,
         ReactorContext reactorContext,
         MavenSession rootSession,
@@ -139,7 +146,13 @@ public class TurboBuilder implements Builder {
             ProjectSegment projectSegment = projectBuildList.get(mavenProject);
             logger.debug("Scheduling: {}", projectSegment.getProject());
             Callable<MavenProject> cb = createBuildCallable(
-                rootSession, projectSegment, reactorContext, taskSegment, duplicateArtifactIds);
+                semaphore,
+                rootSession,
+                projectSegment,
+                reactorContext,
+                taskSegment,
+                duplicateArtifactIds
+            );
             List<MavenProject> downstreamDependencies = rootSession.getProjectDependencyGraph()
                 .getDownstreamProjects(mavenProject, false);
             // negate size for descending order
@@ -160,7 +173,8 @@ public class TurboBuilder implements Builder {
                     for (MavenProject mavenProject : newItemsThatCanBeBuilt) {
                         ProjectSegment scheduledDependent = projectBuildList.get(mavenProject);
                         logger.debug("Scheduling: {}", scheduledDependent);
-                        Callable<MavenProject> cb = createBuildCallable(
+                        var cb = createBuildCallable(
+                            semaphore,
                             rootSession,
                             scheduledDependent,
                             reactorContext,
@@ -188,6 +202,7 @@ public class TurboBuilder implements Builder {
     }
 
     private Callable<MavenProject> createBuildCallable(
+        Semaphore semaphore,
         MavenSession rootSession,
         ProjectSegment projectBuild,
         ReactorContext reactorContext,
@@ -195,23 +210,28 @@ public class TurboBuilder implements Builder {
         Set<String> duplicateArtifactIds
     ) {
         return () -> {
-            final Thread currentThread = Thread.currentThread();
-            final String originalThreadName = currentThread.getName();
-            final MavenProject project = projectBuild.getProject();
-
-            final String threadNameSuffix = duplicateArtifactIds.contains(project.getArtifactId())
-                ? project.getGroupId() + ":" + project.getArtifactId()
-                : project.getArtifactId();
-            currentThread.setName("mvn-turbo-builder-" + threadNameSuffix);
-
+            semaphore.acquire();
             try {
-                CurrentProjectExecution.doWithCurrentProject(projectBuild.getSession(), project, () ->
-                    lifecycleModuleBuilder.buildProject(projectBuild.getSession(), rootSession, reactorContext,
+                final Thread currentThread = Thread.currentThread();
+                final String originalThreadName = currentThread.getName();
+                final MavenProject project = projectBuild.getProject();
+
+                final String threadNameSuffix = duplicateArtifactIds.contains(project.getArtifactId())
+                    ? project.getGroupId() + ":" + project.getArtifactId()
+                    : project.getArtifactId();
+                currentThread.setName("mvn-turbo-builder-" + threadNameSuffix);
+
+                try {
+                    CurrentProjectExecution.doWithCurrentProject(projectBuild.getSession(), project, () ->
+                        lifecycleModuleBuilder.buildProject(projectBuild.getSession(), rootSession, reactorContext,
                             project, taskSegment));
 
-                return projectBuild.getProject();
+                    return projectBuild.getProject();
+                } finally {
+                    currentThread.setName(originalThreadName);
+                }
             } finally {
-                currentThread.setName(originalThreadName);
+                semaphore.release();
             }
         };
     }

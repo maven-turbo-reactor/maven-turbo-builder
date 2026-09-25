@@ -59,10 +59,10 @@ To set up the extension add to `.mvn/extensions.xml` in the root of the project
 ```xml
 <extensions>
     <extension>
-        <!-- https://github.com/maven-turbo-reactor/maven-turbo-builder -->
+        <!-- https://github.com/maven-turbo-reactor/maven-vturbo-builder -->
         <groupId>com.github.seregamorph</groupId>
-        <artifactId>maven-turbo-builder</artifactId>
-        <version>1.3</version>
+        <artifactId>maven-vturbo-builder</artifactId>
+        <version>0.1-SNAPSHOT</version>
     </extension>
 </extensions>
 ```

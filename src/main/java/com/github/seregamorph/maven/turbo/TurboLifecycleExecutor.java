@@ -99,7 +99,7 @@ public class TurboLifecycleExecutor implements LifecycleExecutor {
     }
 
     private MavenExecutionPlan resolveExecutionPlan(MavenSession session, MavenExecutionPlan defaultExecutionPlan) {
-        if (TurboBuilder.isTurboBuilder(session)) {
+        if (VTurboBuilder.isVTurboBuilder(session)) {
             TurboBuilderConfig config = TurboBuilderConfig.fromSession(session);
             List<MojoExecution> mojoExecutions = defaultExecutionPlan.getMojoExecutions();
             boolean compileTestsBeforePackage = config.isTurboTestCompile()
