@@ -79,6 +79,12 @@ To enable this extension by default, add line to `.mvn/maven.config` under root 
 Note, that for many setups, e.g. Apple MacBook Pro, `-T0.5C` can be more efficient and faster than `-T1C` (as only half
 of the CPU cores are powerful).
 
+Also note, that `mvnd` (Maven Daemon) has an [issue](https://github.com/apache/maven-mvnd/issues/1439) with processing mentioned `.mvn/maven.config` parameters. To use
+the Turbo builder with `mvnd`, use CLI parameter `-Dmvnd.builder=turbo`, e.g.
+```shell
+mvnd clean verify  -Dmvnd.builder=turbo
+```
+
 Example adoption:
 * [Maven Surefire, in combination with Maven Surefire Cached extension](https://github.com/seregamorph/maven-surefire/pull/2) (20% faster build + cache complementary)
 * [Maven Surefire, in combination with Develocity Extension](https://github.com/seregamorph/maven-surefire/pull/1) (20% faster build + cache complementary)
