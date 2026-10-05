@@ -23,11 +23,11 @@ class SignalingExecutorCompletionService {
     static final ThreadLocal<Consumer<MavenProject>> currentSignaler = new ThreadLocal<>();
 
     private final ExecutorService executor;
-    private final BlockingQueue<Try<MavenProject>> signaledQueue;
+    private final BlockingQueue<Try<ProjectEvent>> eventQueue;
 
     SignalingExecutorCompletionService(ExecutorService executor) {
         this.executor = Objects.requireNonNull(executor);
-        this.signaledQueue = new LinkedBlockingQueue<>();
+        this.eventQueue = new LinkedBlockingQueue<>();
     }
 
     /**
@@ -56,16 +56,17 @@ class SignalingExecutorCompletionService {
                     throw new IllegalStateException("Current thread has already been signaled");
                 }
                 logger.debug("Project {} signaled to be ready for building its downstream dependencies", mavenProject);
-                signaledQueue.add(Try.success(mavenProject));
+                eventQueue.add(Try.success(ProjectEvent.signaled(mavenProject)));
             });
             try {
                 MavenProject result = buildCallable.call();
                 if (!signaled.get()) {
-                    signaledQueue.add(Try.success(result));
+                    eventQueue.add(Try.success(ProjectEvent.signaled(result)));
                 }
+                eventQueue.add(Try.success(ProjectEvent.completed(result)));
                 return result;
             } catch (Throwable e) {
-                signaledQueue.add(Try.failure(e));
+                eventQueue.add(Try.failure(e));
                 if (e instanceof Exception) {
                     throw e;
                 } else {
@@ -77,9 +78,47 @@ class SignalingExecutorCompletionService {
         }));
     }
 
-    MavenProject takeSignaled() throws InterruptedException, ExecutionException {
-        Try<MavenProject> t = signaledQueue.take();
+    /**
+     * Take the next project event. Each submitted build produces exactly one signaled event (sent either via
+     * {@link #signal(MavenProject)} during the build or after the build) followed by exactly one completed event. If
+     * the build throws, this method throws {@link ExecutionException} in place of the remaining events.
+     *
+     * @return the next project event
+     */
+    ProjectEvent takeEvent() throws InterruptedException, ExecutionException {
+        Try<ProjectEvent> t = eventQueue.take();
         return t.get();
+    }
+
+    static final class ProjectEvent {
+
+        private final MavenProject project;
+        private final boolean completed;
+
+        private ProjectEvent(MavenProject project, boolean completed) {
+            this.project = project;
+            this.completed = completed;
+        }
+
+        static ProjectEvent signaled(MavenProject project) {
+            return new ProjectEvent(project, false);
+        }
+
+        static ProjectEvent completed(MavenProject project) {
+            return new ProjectEvent(project, true);
+        }
+
+        MavenProject getProject() {
+            return project;
+        }
+
+        /**
+         * @return true if all phases of the project build are completed, false if the project is only ready for
+         * building its downstream dependencies
+         */
+        boolean isCompleted() {
+            return completed;
+        }
     }
 
     private abstract static class Try<T> {

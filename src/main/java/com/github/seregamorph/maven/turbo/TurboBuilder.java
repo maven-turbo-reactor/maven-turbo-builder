@@ -1,7 +1,13 @@
 package com.github.seregamorph.maven.turbo;
 
+import static com.github.seregamorph.maven.turbo.MavenPropertyUtils.getProperty;
+import static com.github.seregamorph.maven.turbo.MavenPropertyUtils.isTrue;
+
+import com.github.seregamorph.maven.turbo.SignalingExecutorCompletionService.ProjectEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -146,30 +152,53 @@ public class TurboBuilder implements Builder {
             tasks.add(service.submit(-downstreamDependencies.size(), cb));
         }
 
-        // for each finished project
-        for (int i = 0; i < analyzer.getNumberOfBuilds(); i++) {
+        Set<MavenProject> completedProjects = new HashSet<>();
+        // turboWaitFullUpstream projects, which wait until all upstream dependencies (incl. transitive) are completed
+        Map<MavenProject, List<MavenProject>> waitingProjects = new LinkedHashMap<>();
+        // for each signaled or completed project
+        while (completedProjects.size() < analyzer.getNumberOfBuilds()) {
             try {
-                MavenProject projectBuild = service.takeSignaled();
+                ProjectEvent event = service.takeEvent();
                 if (reactorContext.getReactorBuildStatus().isHalted()) {
                     return;
                 }
 
-                // MNG-6170: Only schedule other modules from reactor if we have more modules to build than one.
-                if (analyzer.getNumberOfBuilds() > 1) {
-                    List<MavenProject> newItemsThatCanBeBuilt = analyzer.markAsFinished(projectBuild);
-                    for (MavenProject mavenProject : newItemsThatCanBeBuilt) {
-                        ProjectSegment scheduledDependent = projectBuildList.get(mavenProject);
-                        logger.debug("Scheduling: {}", scheduledDependent);
-                        Callable<MavenProject> cb = createBuildCallable(
-                            rootSession,
-                            scheduledDependent,
-                            reactorContext,
-                            taskSegment,
-                            duplicateArtifactIds);
-                        List<MavenProject> downstreamDependencies = rootSession.getProjectDependencyGraph()
-                            .getDownstreamProjects(mavenProject, false);
-                        tasks.add(service.submit(-downstreamDependencies.size(), cb));
+                List<MavenProject> newItemsThatCanBeBuilt = new ArrayList<>();
+                if (event.isCompleted()) {
+                    completedProjects.add(event.getProject());
+                } else if (analyzer.getNumberOfBuilds() > 1) {
+                    // MNG-6170: Only schedule other modules from reactor if we have more modules to build than one.
+                    for (MavenProject mavenProject : analyzer.markAsFinished(event.getProject())) {
+                        if (isWaitFullUpstream(rootSession, mavenProject)) {
+                            logger.debug("Waiting for full completion of upstream dependencies: {}", mavenProject);
+                            waitingProjects.put(mavenProject, rootSession.getProjectDependencyGraph()
+                                .getUpstreamProjects(mavenProject, true));
+                        } else {
+                            newItemsThatCanBeBuilt.add(mavenProject);
+                        }
                     }
+                }
+                Iterator<Map.Entry<MavenProject, List<MavenProject>>> waiting = waitingProjects.entrySet().iterator();
+                while (waiting.hasNext()) {
+                    Map.Entry<MavenProject, List<MavenProject>> entry = waiting.next();
+                    if (completedProjects.containsAll(entry.getValue())) {
+                        newItemsThatCanBeBuilt.add(entry.getKey());
+                        waiting.remove();
+                    }
+                }
+
+                for (MavenProject mavenProject : newItemsThatCanBeBuilt) {
+                    ProjectSegment scheduledDependent = projectBuildList.get(mavenProject);
+                    logger.debug("Scheduling: {}", scheduledDependent);
+                    Callable<MavenProject> cb = createBuildCallable(
+                        rootSession,
+                        scheduledDependent,
+                        reactorContext,
+                        taskSegment,
+                        duplicateArtifactIds);
+                    List<MavenProject> downstreamDependencies = rootSession.getProjectDependencyGraph()
+                        .getDownstreamProjects(mavenProject, false);
+                    tasks.add(service.submit(-downstreamDependencies.size(), cb));
                 }
             } catch (InterruptedException | ExecutionException e) {
                 rootSession.getResult().addException(e);
@@ -214,6 +243,12 @@ public class TurboBuilder implements Builder {
                 currentThread.setName(originalThreadName);
             }
         };
+    }
+
+    private static boolean isWaitFullUpstream(MavenSession session, MavenProject project) {
+        // Opt-in for projects that read results of upstream phases after "package" (like jacoco.exec files written by
+        // tests): schedule them only after all upstream dependencies are fully built, like the default Maven builder.
+        return isTrue(getProperty(session, project, "turboWaitFullUpstream"));
     }
 
     private static Set<String> gatherDuplicateArtifactIds(Set<MavenProject> projects) {
