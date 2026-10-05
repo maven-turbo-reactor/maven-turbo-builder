@@ -97,6 +97,10 @@ Supported versions:
 * all standard plugins like `maven-surefire-plugin`, `maven-failsafe-plugin` and other
 * plugins like Jacoco are also supported, but potentially may require to change the goal execution phase
 
+Real project optimization example (timelines created via the [maven-timeline-extension](https://github.com/maven-turbo-reactor/maven-timeline-extension)):
+
+<img src="doc/timelines_compared.png" alt="Timelines" width="752"/>
+
 Join discussion:
 * discussed in the [Maven Developer Mailing List](https://lists.apache.org/thread/m8yd6zk3pb2k1ptyy5fs97mykzlzof3w)
 * share your experience and submit [issue](https://github.com/maven-turbo-reactor/maven-turbo-builder/issues)
