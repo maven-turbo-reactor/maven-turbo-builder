@@ -85,6 +85,21 @@ the Turbo builder with `mvnd`, use CLI parameter `-Dmvnd.builder=turbo`, e.g.
 mvnd clean verify  -Dmvnd.builder=turbo
 ```
 
+To adjust the scheduling of a module, set these properties in the `<properties>` section of the module `pom.xml`
+(a `-D` parameter with the same name applies to all modules):
+* `skipTurboSignal`: when `true`, the downstream dependencies of this module start only after all phases of this module
+  are completed
+* `turboWaitFullUpstream`: when `true`, this module starts only after all phases of all its upstream dependencies
+  (transitive dependencies too) are completed. The other modules keep the turbo scheduling. Use it for a module that
+  reads files that the upstream modules write after the `package` phase. For example, `jacoco:report-aggregate` reads
+  the `jacoco.exec` file that the tests of each upstream module write, so set it in the module that makes the
+  aggregated coverage report:
+```xml
+<properties>
+    <turboWaitFullUpstream>true</turboWaitFullUpstream>
+</properties>
+```
+
 Example adoption:
 * [Maven Surefire, in combination with Maven Surefire Cached extension](https://github.com/seregamorph/maven-surefire/pull/2) (20% faster build + cache complementary)
 * [Maven Surefire, in combination with Develocity Extension](https://github.com/seregamorph/maven-surefire/pull/1) (20% faster build + cache complementary)
