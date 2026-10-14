@@ -125,3 +125,4 @@ Real project optimization example (timelines created via the [maven-timeline-ext
 Join discussion:
 * discussed in the [Maven Developer Mailing List](https://lists.apache.org/thread/m8yd6zk3pb2k1ptyy5fs97mykzlzof3w)
 * share your experience and submit [issue](https://github.com/maven-turbo-reactor/maven-turbo-builder/issues)
+* Reddit [r/java post](https://www.reddit.com/r/java/comments/1wxfdju/i_wrote_own_efficient_maven_scheduler_to_build/)
