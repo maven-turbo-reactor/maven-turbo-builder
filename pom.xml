@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>maven-turbo-builder</artifactId>
-    <version>1.4-SNAPSHOT</version>
+    <version>1.5-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>maven-turbo-builder</name>
     <description>
@@ -42,7 +42,7 @@
 
     <properties>
         <!-- https://maven.apache.org/guides/mini/guide-reproducible-builds.html -->
-        <project.build.outputTimestamp>2026-08-07T08:07:02Z</project.build.outputTimestamp>
+        <project.build.outputTimestamp>2026-10-15T15:12:30Z</project.build.outputTimestamp>
 
         <maven.version>4.0.0-rc-7</maven.version>
     </properties>
